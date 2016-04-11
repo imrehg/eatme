@@ -10,7 +10,9 @@ app = Flask(__name__,
             static_url_path='/static')
 
 ## Blueprints
+from .api import api
 from .static_pages import static_pages
+app.register_blueprint(api)
 app.register_blueprint(static_pages)
 
 ## Configuration
