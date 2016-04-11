@@ -1,7 +1,9 @@
 *~
+*#
 *.pyc
 *.pyo
 env
 env*
 *.egg
 *.egg-info
+instance/
