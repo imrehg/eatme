@@ -1,0 +1,27 @@
+<!doctype html>
+<title>Hello from Flask</title>
+<head>
+    <script src="/static/js/jquery-2.2.3.js"></script>
+    <script src="/static/js/underscore-1.8.3.js"></script>
+
+    <script id="header-template" type="text/x-underscore-template">
+        <h1>Some header text: <%= foo %></h1>
+        <p>Welcome to the world, <%= name %>. How's it going?</p>
+    </script>
+
+    <script>
+        $(function () {
+
+        var tpl = _.template($("#header-template").html());
+        // Add the compiled html to the page
+        $('.content-placeholder').html(tpl({foo: "hello there", name: "Greg"}) );
+        });
+    </script>
+
+</head>
+<body>
+Testing
+<!--Your new content will be displayed in here-->
+<div class="content-placeholder"></div>
+</body>
+</html>

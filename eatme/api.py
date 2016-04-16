@@ -1,6 +1,8 @@
 from flask import Blueprint, g, jsonify
 
+from . import ma
 from .authy import auth
+import eatme.models as models
 
 api = Blueprint('api',
                 __name__,
@@ -12,4 +14,18 @@ api = Blueprint('api',
 def users(userid):
     """Query users
     """
-    return "Userid: {}".format(userid)
+    if userid is not None:
+        user = models.User.query.filter_by(id=userid).first()
+        if user is not None:
+            return models.user_schema.jsonify(user)
+        else:
+            # Should return "wrong ID"
+            return {}
+    else:
+        users = models.User.query.all()
+        if users is not None:
+            result = models.users_schema.dump(users)
+            return jsonify(users=result.data)
+        else:
+            # Should return "wrong ID"
+            return {}

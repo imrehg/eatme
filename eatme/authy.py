@@ -1,6 +1,7 @@
 from flask import g
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth, MultiAuth
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
+from eatme.models import User
 
 basic_auth = HTTPBasicAuth()
 multi_auth = MultiAuth(basic_auth)
@@ -14,9 +15,15 @@ users = {
 
 @basic_auth.verify_password
 def verify_password(username, password):
+    if username is None or password is None:
+        return False
     g.user = None
-    if username in users:
-        if check_password_hash(users.get(username), password):
+    user = User.query.filter_by(username=username).first()
+    if user and user.check_password(password):
             g.user = username
             return True
     return False
+
+
+def genpass(password):
+    return generate_password_hash(password)

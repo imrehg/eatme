@@ -13,4 +13,4 @@ def favicon():
 
 @static_pages.route('/')
 def home():
-    return "Hello!"
+    return render_template('index.html')
