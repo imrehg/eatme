@@ -51,11 +51,3 @@ def create_user():
     else:
         print(admin.get_auth_token())
     db.session.commit()
-
-    # First setup, add administrator if does not exists
-    from .models import User
-    admin_account = User.query.filter_by(username='admin').first()
-    if admin_account is None:
-        admin = User('admin', '', app.config["ADMIN_PASSWORD_HASH"])
-        db.session.add(admin)
-        db.session.commit()
