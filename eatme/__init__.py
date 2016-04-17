@@ -5,6 +5,7 @@ EatMe - calories tracking app
 from flask import Flask, g, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
+from flask.ext.security import Security, SQLAlchemyUserDatastore
 
 app = Flask(__name__,
             instance_relative_config=True,
@@ -31,9 +32,25 @@ from .static_pages import static_pages
 app.register_blueprint(api)
 app.register_blueprint(static_pages)
 
-def init_db():
-    # Create all databases
+# Setup Flask-Security
+from .models import User, Role
+user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+security = Security(app, user_datastore)
+
+# Create a user to test with
+@app.before_first_request
+def create_user():
+    """
+    Create admin default account on first request if does not exists.
+    """
     db.create_all()
+    admin_email = app.config["ADMIN_EMAIL"]
+    admin = user_datastore.get_user(admin_email)
+    if admin is None:
+        user_datastore.create_user(email=admin_email, password=app.config["ADMIN_PASSWORD_HASH"])
+    else:
+        print(admin.get_auth_token())
+    db.session.commit()
 
     # First setup, add administrator if does not exists
     from .models import User

@@ -1,5 +1,6 @@
 from flask import g
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask.ext.security import Security, SQLAlchemyUserDatastore, \
+    UserMixin, RoleMixin
 from . import db, ma
 
 # Define a base model for other database tables to inherit
@@ -13,38 +14,33 @@ class Base(db.Model):
                                            onupdate=db.func.current_timestamp())
 
 
-class User(Base):
-    __tablename__ = 'auth_user'
+# Define models
+roles_users = db.Table('roles_users',
+        db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
+        db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
 
-    username = db.Column(db.String(128), unique=True)
-    # Identification Data: email & password
-    password_hash = db.Column(db.String(192), nullable=False)
 
-    # Authorisation Data: role & status
-    # role = db.Column(db.SmallInteger, nullable=False)
-    # status = db.Column(db.SmallInteger, nullable=False)
+class Role(Base, RoleMixin):
+    name = db.Column(db.String(80), unique=True)
+    description = db.Column(db.String(255))
 
-    def __init__(self, username, password, password_hash=None):
-        self.username = username
-        if len(password) > 0:
-            self.set_password(password)
-        elif password_hash is not None:
-            assert isinstance(password_hash, str)
-            self.password_hash = password_hash
-
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
-    def __repr__(self):
-        return '<User %r>' % self.username
+class User(Base, UserMixin):
+    email = db.Column(db.String(255), unique=True)
+    password = db.Column(db.String(255))
+    active = db.Column(db.Boolean())
+    confirmed_at = db.Column(db.DateTime())
+    last_login_at = db.Column(db.DateTime())
+    current_login_at = db.Column(db.DateTime())
+    last_login_ip = db.Column(db.String(45))
+    current_login_ip = db.Column(db.String(45))
+    login_count = db.Column(db.Integer)
+    roles = db.relationship('Role', secondary=roles_users,
+                            backref=db.backref('users', lazy='dynamic'))
 
 class UserSchema(ma.Schema):
     class Meta:
         # Fields to expose
-        fields = ('id', 'username', 'date_created', 'date_modified', '_links')
+        fields = ('id', 'email', 'date_created', 'date_modified', '_links')
     # Smart hyperlinking
     _links = ma.Hyperlinks({
         'self': ma.URLFor('api.users', userid='<id>'),

@@ -1,7 +1,6 @@
 from flask import Blueprint, g, jsonify
+from flask.ext.security import auth_required
 
-from . import ma
-from .authy import auth
 import eatme.models as models
 
 api = Blueprint('api',
@@ -10,7 +9,7 @@ api = Blueprint('api',
 
 @api.route('/api/v1/users', defaults={'userid': None})
 @api.route('/api/v1/users/<userid>')
-@auth.login_required
+@auth_required('token', 'session')
 def users(userid):
     """Query users
     """
@@ -29,3 +28,12 @@ def users(userid):
         else:
             # Should return "wrong ID"
             return {}
+
+@api.route('/api/v1/passwd')
+@auth_required('token', 'session')
+def passwd():
+    return "Hello!"
+
+@api.route('/api/v1/login')
+def login():
+    return "Hello!"
