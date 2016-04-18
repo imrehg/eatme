@@ -1,4 +1,3 @@
-
 """
 EatMe - calories tracking app
 """
@@ -29,12 +28,14 @@ ma = Marshmallow(app)
 
 # Setup Flask-Security
 from .models import User, Role
+
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
 
 ## Blueprints
 from .api import api
 from .static_pages import static_pages
+
 app.register_blueprint(api)
 app.register_blueprint(static_pages)
 
@@ -42,6 +43,7 @@ app.register_blueprint(static_pages)
 # See: https://pythonhosted.org/Flask-Security/quickstart.html#id4
 if app.config['MAIL']:
     mail = Mail(app)
+
 
 # Create a user to test with
 @app.before_first_request
@@ -54,6 +56,4 @@ def create_user():
     admin = user_datastore.get_user(admin_email)
     if admin is None:
         user_datastore.create_user(email=admin_email, password=app.config["ADMIN_PASSWORD_HASH"])
-    else:
-        print(admin.get_auth_token())
-    db.session.commit()
+        db.session.commit()
