@@ -55,5 +55,13 @@ def create_user():
     admin_email = app.config["ADMIN_EMAIL"]
     admin = user_datastore.get_user(admin_email)
     if admin is None:
-        user_datastore.create_user(email=admin_email, password=app.config["ADMIN_PASSWORD_HASH"])
+        admin_user = user_datastore.create_user(email=admin_email, password=app.config["ADMIN_PASSWORD_HASH"])
+        db.session.commit()
+
+        admin_role = user_datastore.create_role(name="admin", description="Administrator")
+        editor_role = user_datastore.create_role(name="editor", description="Editor")
+        print(admin_role)
+        db.session.commit()
+        user_datastore.add_role_to_user(admin_user, admin_role)
+        user_datastore.add_role_to_user(admin_user, editor_role)
         db.session.commit()
