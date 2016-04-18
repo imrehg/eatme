@@ -7,6 +7,7 @@ SECRET_KEY = 'i-have-not-changed-the-secret-key'
 SECURITY_PASSWORD_HASH = 'bcrypt'
 SECURITY_PASSWORD_SALT = 'i-have-not-changed-the-salt'
 SECURITY_TOKEN_AUTHENTICATION_KEY = 'auth_token'
+SECURITY_TOKEN_MAX_AGE = None
 SECURITY_TRACKABLE = True
 # Note: http://mandarvaze.github.io/2015/01/token-auth-with-flask-security.html
 WTF_CSRF_ENABLED = False
