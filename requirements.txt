@@ -7,5 +7,5 @@ Flask-Script==2.0.5
 Flask-Security==1.7.5
 bcrypt==1.1.1
 #flask-inputs==0.2.0
--e git://github.com/imrehg/flask-inputs.git@279fbe3eff22dc91aeb32af78160ff532572c427#egg=flask-inputs
+-e git+https://github.com/imrehg/flask-inputs.git@279fbe3eff22dc91aeb32af78160ff532572c427#egg=flask-inputs
 jsonschema==2.5.1
