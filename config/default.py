@@ -14,3 +14,11 @@ WTF_CSRF_ENABLED = False
 ADMIN_EMAIL = 'root@localhost'
 ADMIN_PASSWORD_HASH = '$2a$12$nTdjqiAwDXbCm3xtv2TkReaNtWXBLnqSDUu72v/JHgSkmfgSUw.pO'
 
+## Mail settings
+MAIL = False   # Mail functionality disabled by default
+MAIL_SERVER = 'smtp.example.com'
+MAIL_PORT = 587
+MAIL_USE_TLS = True
+MAIL_USE_SSL = False
+MAIL_USERNAME = 'username'
+MAIL_PASSWORD = 'password'

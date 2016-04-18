@@ -6,6 +6,7 @@ from flask import Flask, g, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from flask.ext.security import Security, SQLAlchemyUserDatastore
+from flask_mail import Mail
 
 app = Flask(__name__,
             instance_relative_config=True,
@@ -36,6 +37,11 @@ app.register_blueprint(static_pages)
 from .models import User, Role
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
+
+# Add mail service
+# See: https://pythonhosted.org/Flask-Security/quickstart.html#id4
+if app.config['MAIL']:
+    mail = Mail(app)
 
 # Create a user to test with
 @app.before_first_request
