@@ -27,16 +27,16 @@ app.config['SQLALCHEMY_DATABASE_URI'] = app.config["DATABASE_URI"]
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
 
+# Setup Flask-Security
+from .models import User, Role
+user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+security = Security(app, user_datastore)
+
 ## Blueprints
 from .api import api
 from .static_pages import static_pages
 app.register_blueprint(api)
 app.register_blueprint(static_pages)
-
-# Setup Flask-Security
-from .models import User, Role
-user_datastore = SQLAlchemyUserDatastore(db, User, Role)
-security = Security(app, user_datastore)
 
 # Add mail service
 # See: https://pythonhosted.org/Flask-Security/quickstart.html#id4
