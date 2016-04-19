@@ -9,3 +9,4 @@ bcrypt==1.1.1
 #flask-inputs==0.2.0
 https://github.com/imrehg/flask-inputs/archive/279fbe3eff22dc91aeb32af78160ff532572c427.zip
 jsonschema==2.5.1
+pyrfc3339==1.0

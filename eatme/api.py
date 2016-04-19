@@ -1,5 +1,7 @@
+import pyrfc3339
+from datetime import datetime
 from flask import Blueprint, g, jsonify, request
-from flask.ext.security import auth_required
+from flask.ext.security import auth_required, current_user
 from flask.ext.security.utils import encrypt_password
 
 from eatme import db, user_datastore
@@ -127,7 +129,40 @@ def users_records(userid):
     return
 
 
-@api.route('/api/v1/records', defaults={'recordid': None})
+"""
+Records API
+"""
+
+
+@api.route('/api/v1/records', methods=['POST'])
+@auth_required('token', 'session')
+def add_record():
+    """
+    Create new record
+
+    :return:
+    """
+    new_record_inputs = NewRecordInputs(request)
+    if not new_record_inputs.validate():
+        raise InvalidUsage(new_record_inputs.errors, status_code=400)
+    else:
+        input = request.json
+        if input['userid'] != current_user.id and not current_user.has_role('editor'):
+            raise InvalidUsage("No access to add records to this user.", status_code=403)
+
+        user = user_datastore.get_user(input['userid'])
+        if user is None:
+            raise InvalidUsage("Invalid user", status_code=400)
+
+        new_record = models.Record(user_id=input['userid'],
+                                   calories=int(input['calories']),
+                                   date_record=pyrfc3339.parse(input['date_record']),
+                                   description=input['description'])
+        db.session.add(new_record)
+        db.session.commit()
+        return models.record_schema.jsonify(new_record)
+
+
 @api.route('/api/v1/records/<recordid>')
 def records(recordid):
     """
@@ -162,3 +197,32 @@ registration_schema = {
 
 class RegistrationInputs(Inputs):
     json = [JsonSchema(schema=registration_schema)]
+
+
+new_record_schema = {
+    "title": "A new calories record",
+    "type": "object",
+    "properties": {
+        "date_record": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "description": {
+            "type": "string",
+            "maxlength": 10
+        },
+        "calories": {
+            "type": "integer",
+            "minimum": 0
+        },
+        "userid": {
+            "type": "integer",
+            "minimum": 1
+        }
+    },
+    "required": ["date_record", "calories", "userid"]
+}
+
+
+class NewRecordInputs(Inputs):
+    json = [JsonSchema(schema=new_record_schema)]

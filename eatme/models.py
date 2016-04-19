@@ -37,15 +37,44 @@ class User(Base, UserMixin):
     roles = db.relationship('Role', secondary=roles_users,
                             backref=db.backref('users', lazy='dynamic'))
 
+
+class Record(Base):
+    """
+    Calories records
+    """
+    date_record = db.Column(db.DateTime())
+    description = db.Column(db.Unicode(255))
+    calories = db.Column(db.Integer)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User',
+                           backref=db.backref('users', lazy='dynamic'))
+
+
+"""
+Output Schemas
+"""
+
+
 class UserSchema(ma.Schema):
     class Meta:
         # Fields to expose
         fields = ('id', 'email', 'date_created', 'date_modified', '_links')
+
     # Smart hyperlinking
     _links = ma.Hyperlinks({
         'self': ma.URLFor('api.users', userid='<id>'),
         'collection': ma.URLFor('api.users')
     })
 
+
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
+
+
+class RecordSchema(ma.Schema):
+    class Meta:
+        # Fields to expose
+        fields = ('id', 'date_created', 'date_modified', 'date_record', 'description', 'calories', 'user_id')
+
+
+record_schema = RecordSchema()
