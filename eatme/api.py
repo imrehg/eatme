@@ -45,7 +45,7 @@ User API
 
 
 @api.route('/api/v1/users', defaults={'userid': None})
-@api.route('/api/v1/users/<userid>')
+@api.route('/api/v1/users/<int:userid>')
 @auth_required('token', 'session')
 def users(userid):
     """Query users
