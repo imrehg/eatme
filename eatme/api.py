@@ -277,14 +277,14 @@ def add_record():
             raise InvalidUsage("Invalid user", status_code=400)
 
         try:
-            record_date = datetime.strptime(input['record_date'],'%Y-%m-%d').date()
+            record_date = datetime.strptime(input['record_date'], '%Y-%m-%d').date()
         except ValueError:
             raise InvalidUsage("Invalid date given", status_code=400)
 
         try:
             if len(input['record_time']) > 5:
                 """ Use full time format: 12:30:45 """
-                record_time = datetime.strptime(input['record_time'],'%H:%M:%S').time()
+                record_time = datetime.strptime(input['record_time'], '%H:%M:%S').time()
             else:
                 """ Use hour/minute time format: 12:30 """
                 record_time = datetime.strptime(input['record_time'], '%H:%M').time()
