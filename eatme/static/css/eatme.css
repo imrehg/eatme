@@ -20,16 +20,23 @@
     #Default looks
 \*------------------------------------*/
 
-div#loginContainer {
-    display: none;
-}
-
-div#signupContainer {
+div#loginContainer,
+div#signupContainer,
+div#caloriesContainer {
     display: none;
 }
 
 login-button,
 signup-button,
-logout-button {
+logout-button,
+calories-button, {
     display: none;
+}
+
+.withinTarget {
+    background-color: lightgreen;
+}
+
+.overTarget {
+    background-color: red;
 }
