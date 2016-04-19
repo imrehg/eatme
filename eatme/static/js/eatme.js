@@ -42,7 +42,6 @@ $(document).ready(function() {
                 authButtons();
             },
             error: function(data){
-                console.log(data)
                 alert("Something did not work out, please try again!");
             }
         });
@@ -65,7 +64,6 @@ $(document).ready(function() {
                 email: $("#signupEmail").val(),
                 password: $("#signupPW1").val()
         }
-        console.log(person);
         $.ajax({
             url: '/api/v1/users',
             type: 'POST',
@@ -96,7 +94,6 @@ $(document).ready(function() {
                 email: $("#loginEmail").val(),
                 password: $("#loginPW").val()
         }
-        console.log(person)
         e.preventDefault();
         $.ajax({
             url: '/login',
@@ -118,7 +115,6 @@ $(document).ready(function() {
                 }
             },
             error: function(data){
-                console.log(data)
                 alert("Something did not work out, please try again!");
             }
         });
