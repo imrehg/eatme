@@ -69,7 +69,8 @@ def users(userid):
     if userid is not None:
         user = models.User.query.filter_by(id=userid).first()
         if user is not None:
-            return models.user_schema.jsonify(user)
+            result = models.user_schema.dump(user)
+            return jsonify(wrap200code(user=result.data))
         else:
             # Should return "wrong ID"
             return {}
@@ -80,6 +81,16 @@ def users(userid):
             return jsonify(wrap200code(users=result.data))
         else:
             raise InvalidUsage('Wrong user id.', status_code=400)
+
+
+@api.route('/api/v1/users/self')
+@auth_required('token', 'session')
+def user_self():
+    """
+    Check logged in user's data
+    :return:
+    """
+    return users(current_user.id)
 
 
 @api.route('/api/v1/users', methods=['POST'])
