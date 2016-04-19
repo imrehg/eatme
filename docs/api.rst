@@ -4,7 +4,6 @@ EatMe API
 Registering a new user
 ----------------------
 
-
 See the documentation of the `/api/v1/users <#post--api-v1-users>`_ endpoint for info.
 
 Logging in
