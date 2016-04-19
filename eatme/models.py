@@ -3,28 +3,35 @@ from flask.ext.security import Security, SQLAlchemyUserDatastore, \
     UserMixin, RoleMixin
 from . import db, ma
 
+
 # Define a base model for other database tables to inherit
 class Base(db.Model):
+    __abstract__ = True
 
-    __abstract__  = True
-
-    id            = db.Column(db.Integer, primary_key=True)
-    date_created  = db.Column(db.DateTime, default=db.func.current_timestamp())
+    id = db.Column(db.Integer, primary_key=True)
+    date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
     date_modified = db.Column(db.DateTime, default=db.func.current_timestamp(),
-                                           onupdate=db.func.current_timestamp())
+                              onupdate=db.func.current_timestamp())
 
 
 # Define models
 roles_users = db.Table('roles_users',
-        db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
-        db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
+                       db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
+                       db.Column('role_id', db.Integer(), db.ForeignKey('role.id')))
 
 
 class Role(Base, RoleMixin):
+    """
+    Administrative roles
+    """
     name = db.Column(db.String(80), unique=True)
     description = db.Column(db.String(255))
 
+
 class User(Base, UserMixin):
+    """
+    User list
+    """
     email = db.Column(db.String(255), unique=True)
     password = db.Column(db.String(255))
     active = db.Column(db.Boolean())

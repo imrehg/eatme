@@ -8,7 +8,6 @@ from eatme import db, user_datastore
 import eatme.models as models
 
 from flask_inputs import Inputs
-# from wtforms.validators import DataRequired, Email
 from flask_inputs.validators import JsonSchema
 
 
@@ -38,6 +37,11 @@ def handle_invalid_usage(error):
     response = jsonify(error.to_dict())
     response.status_code = error.status_code
     return response
+
+
+"""
+User API
+"""
 
 
 @api.route('/api/v1/users', defaults={'userid': None})
