@@ -3,6 +3,7 @@ DATABASE_URI = 'sqlite://'
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 ## Security settings
+SECURITY_TOKEN_AUTHENTICATION_HEADER = 'Authorization'
 SECRET_KEY = 'i-have-not-changed-the-secret-key'
 SECURITY_PASSWORD_HASH = 'bcrypt'
 SECURITY_PASSWORD_SALT = 'i-have-not-changed-the-salt'
