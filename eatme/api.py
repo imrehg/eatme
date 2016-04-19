@@ -282,7 +282,7 @@ new_record_schema = {
         },
         "description": {
             "type": "string",
-            "maxlength": 10
+            "maxlength": 255
         },
         "calories": {
             "type": "integer",
