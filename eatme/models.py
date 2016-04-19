@@ -71,7 +71,10 @@ class UserSchema(ma.Schema):
     # Smart hyperlinking
     _links = ma.Hyperlinks({
         'self': ma.URLFor('api.users', userid='<id>'),
-        'collection': ma.URLFor('api.users')
+        'collection': ma.URLFor('api.users'),
+        'roles': ma.URLFor('api.users_roles', userid='<id>'),
+        'targets': ma.URLFor('api.users_targets', userid='<id>'),
+        'records': ma.URLFor('api.users_records', userid='<id>')
     })
 
 
