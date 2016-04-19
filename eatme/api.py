@@ -198,9 +198,25 @@ def add_record():
         if user is None:
             raise InvalidUsage("Invalid user", status_code=400)
 
+        try:
+            record_date = datetime.strptime(input['record_date'],'%Y-%m-%d').date()
+        except ValueError:
+            raise InvalidUsage("Invalid date given", status_code=400)
+
+        try:
+            if len(input['record_time']) > 5:
+                """ Use full time format: 12:30:45 """
+                record_time = datetime.strptime(input['record_time'],'%H:%M:%S').time()
+            else:
+                """ Use hour/minute time format: 12:30 """
+                record_time = datetime.strptime(input['record_time'], '%H:%M').time()
+        except ValueError:
+            raise InvalidUsage("Invalid time given", status_code=400)
+
         new_record = models.Record(user_id=input['userid'],
                                    calories=int(input['calories']),
-                                   date_record=pyrfc3339.parse(input['date_record']),
+                                   record_date=record_date,
+                                   record_time=record_time,
                                    description=input['description'])
         db.session.add(new_record)
         db.session.commit()
@@ -231,13 +247,30 @@ def records(recordid):
         if not updated_records_inputs.validate():
             raise InvalidUsage(updated_records_inputs.errors, status_code=400)
         update_json = request.json
-        print(update_json)
         if 'calories' in update_json:
             record.calories = int(update_json['calories'])
-        if 'date_record' in update_json:
-            record.date_record = pyrfc3339.parse(update_json['date_record'])
+        if 'record_date' in update_json:
+            try:
+                record_date = datetime.strptime(update_json['record_date'], '%Y-%m-%d').date()
+            except ValueError:
+                raise InvalidUsage("Invalid date given", status_code=400)
+            record.record_date = record_date
+
+        if 'record_time' in update_json:
+            try:
+                if len(update_json['record_time']) > 5:
+                    """ Use full time format: 12:30:45 """
+                    record_time = datetime.strptime(update_json['record_time'], '%H:%M:%S').time()
+                else:
+                    """ Use hour/minute time format: 12:30 """
+                    record_time = datetime.strptime(update_json['record_time'], '%H:%M').time()
+            except ValueError:
+                raise InvalidUsage("Invalid time given", status_code=400)
+            record.record_time = record_time
+
         if 'description' in update_json:
             record.description = update_json['description']
+
         db.session.commit()
         return models.record_schema.jsonify(record)
     elif request.method == 'DELETE':
@@ -276,9 +309,11 @@ new_record_schema = {
     "title": "A new calories record",
     "type": "object",
     "properties": {
-        "date_record": {
+        "record_date": {
             "type": "string",
-            "format": "date-time"
+        },
+        "record_time": {
+            "type": "string",
         },
         "description": {
             "type": "string",
@@ -293,7 +328,7 @@ new_record_schema = {
             "minimum": 1
         }
     },
-    "required": ["date_record", "calories", "userid"]
+    "required": ["record_date", "record_time", "calories", "userid"]
 }
 
 
@@ -305,9 +340,11 @@ updated_record_schema = {
     "title": "An updated calories record",
     "type": "object",
     "properties": {
-        "date_record": {
+        "record_date": {
             "type": "string",
-            "format": "date-time"
+        },
+        "record_time": {
+            "type": "string",
         },
         "description": {
             "type": "string",

@@ -51,7 +51,8 @@ class Record(Base):
     """
     Calories records
     """
-    date_record = db.Column(db.DateTime())
+    record_date = db.Column(db.Date())
+    record_time = db.Column(db.Time())
     description = db.Column(db.Unicode(255))
     calories = db.Column(db.Integer)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -81,7 +82,14 @@ users_schema = UserSchema(many=True)
 class RecordSchema(ma.Schema):
     class Meta:
         # Fields to expose
-        fields = ('id', 'date_created', 'date_modified', 'date_record', 'description', 'calories', 'user_id')
+        fields = ('id',
+                  'date_created',
+                  'date_modified',
+                  'record_date',
+                  'record_time',
+                  'description',
+                  'calories',
+                  'user_id')
 
 
 record_schema = RecordSchema()
