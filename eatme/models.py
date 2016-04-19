@@ -44,6 +44,7 @@ class User(Base, UserMixin):
     target_daily_calories = db.Column(db.Integer, default=0)
     roles = db.relationship('Role', secondary=roles_users,
                             backref=db.backref('users', lazy='dynamic'))
+    records = db.relationship('Record', backref='users', lazy='dynamic')
 
 
 class Record(Base):
@@ -54,8 +55,6 @@ class Record(Base):
     description = db.Column(db.Unicode(255))
     calories = db.Column(db.Integer)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    user = db.relationship('User',
-                           backref=db.backref('users', lazy='dynamic'))
 
 
 """
