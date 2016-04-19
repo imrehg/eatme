@@ -129,8 +129,12 @@ def users_records(userid):
     if userid != current_user.id and not current_user.has_role('editor'):
         raise InvalidUsage("No access to the records of this user.", status_code=403)
 
-    records = models.Record.query.filter_by(user_id=userid).all()
-    result = models.records_schema.dump(records)
+    user = models.User.query.filter_by(id=userid).first()
+    if user is None:
+        raise InvalidUsage("No such user.", status_code=400)
+
+    current_records = models.Record.query.filter_by(user_id=userid).all()
+    result = models.records_schema.dump(current_records)
     return jsonify(records=result.data)
 
 
