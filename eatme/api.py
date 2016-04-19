@@ -134,6 +134,26 @@ def users_records(userid):
     return jsonify(records=result.data)
 
 
+@api.route('/api/v1/users/<int:userid>/targets', methods=['GET', 'PUT'])
+@auth_required('token', 'session')
+def users_targets(userid):
+    """
+    Query user targets
+
+    :param userid:
+    :return:
+    """
+    if userid != current_user.id and not current_user.has_role('editor'):
+        raise InvalidUsage("No access to the records of this user.", status_code=403)
+
+    user = models.User.query.filter_by(id=userid).first()
+    if user is None:
+        raise InvalidUsage("No such user.", status_code=400)
+
+    result = models.target_schema.dump(user)
+    return jsonify(targets=result.data)
+
+
 """
 Records API
 """

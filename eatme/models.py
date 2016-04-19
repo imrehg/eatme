@@ -34,6 +34,7 @@ class User(Base, UserMixin):
     last_login_ip = db.Column(db.String(45))
     current_login_ip = db.Column(db.String(45))
     login_count = db.Column(db.Integer)
+    target_daily_calories = db.Column(db.Integer, default=0)
     roles = db.relationship('Role', secondary=roles_users,
                             backref=db.backref('users', lazy='dynamic'))
 
@@ -79,3 +80,12 @@ class RecordSchema(ma.Schema):
 
 record_schema = RecordSchema()
 records_schema = RecordSchema(many=True)
+
+
+class TargetSchema(ma.Schema):
+    class Meta:
+        # Fields to expose
+        fields = ('id', 'target_daily_calories')
+
+
+target_schema = TargetSchema()
