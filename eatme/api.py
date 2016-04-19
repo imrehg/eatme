@@ -158,8 +158,19 @@ def users_targets(userid):
     if user is None:
         raise InvalidUsage("No such user.", status_code=400)
 
-    result = models.target_schema.dump(user)
-    return jsonify(targets=result.data)
+    if request.method == 'GET':
+        result = models.target_schema.dump(user)
+        return jsonify(targets=result.data)
+    elif request.method == 'PUT':
+        target_inputs = TargetInputs(request)
+        if not target_inputs.validate():
+            raise InvalidUsage(target_inputs.errors, status_code=400)
+        target_json = request.json
+        user.target_daily_calories = int(target_json['target_daily_calories'])
+        db.session.commit()
+        return jsonify(success=True, settings=target_json)
+    else:
+        raise InvalidUsage("Method not allowed (only GET and PUT)", status_code=405)
 
 
 """
@@ -259,3 +270,21 @@ new_record_schema = {
 
 class NewRecordInputs(Inputs):
     json = [JsonSchema(schema=new_record_schema)]
+
+
+target_schema = {
+    "title": "A user registration object",
+    "type": "object",
+    "properties": {
+        "target_daily_calories": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+        },
+    },
+    "required": ["target_daily_calories"]
+}
+
+
+class TargetInputs(Inputs):
+    json = [JsonSchema(schema=target_schema)]
