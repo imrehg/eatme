@@ -64,31 +64,134 @@ User API
 @api.route('/api/v1/users/<int:userid>')
 @auth_required('token', 'session')
 def users(userid):
-    """Query users
+    """Query users.
+
+    If ``userid`` is given, then query the specific user, while without ``userid``
+    the whole dataset is queried.
+
+    Only users with ``admin`` or ``editor`` roles can query other users or the whole list.
+
+    **Example request:**
+
+    .. sourcecode:: http
+
+        GET /api/v1/users/2 HTTP/1.0
+        Authorization: TOKEN
+        Accept: application/json
+
+    **Corresponding response:**
+
+    .. sourcecode:: http
+
+        HTTP/1.0 200 OK
+        Content-Type: application/json
+        Content-Length: 489
+        Server: Werkzeug/0.11.8 Python/3.5.1
+        Date: Tue, 19 Apr 2016 14:28:58 GMT
+
+        {
+            "meta": {
+                "code": 200
+            },
+            "response": {
+                "user": {
+                    "_links": {
+                        "collection": "/api/v1/users",
+                        "records": "/api/v1/users/2/records",
+                        "roles": "/api/v1/users/2/roles",
+                        "self": "/api/v1/users/2",
+                        "targets": "/api/v1/users/2/targets"
+                    },
+                    "date_created": "2016-04-19T05:39:11+00:00",
+                    "date_modified": "2016-04-19T14:17:21+00:00",
+                    "email": "xyz@a.com",
+                    "id": 2,
+                    "target_daily_calories": 0
+                }
+            }
+        }
+
+    :qparam auth_token: Optional token for authentication if no :http:header:`Authorization` nor session cookie is sent.
+
+    :reqheader Authorization: Optional token for authentication if no ``auth_token`` nor session cookie is sent.
+
+    :status 200: A correct query with proper authorization
+    :status 400: If a wrong user ID is queried.
+    :status 403: If the current user does not have permission to do the particular query
     """
     if userid is not None:
-        user = models.User.query.filter_by(id=userid).first()
-        if user is not None:
-            result = models.user_schema.dump(user)
-            return jsonify(wrap200code(user=result.data))
+        if userid == current_user.id or current_user.has_role('editor') or current_user.has_role('editor'):
+            user = models.User.query.filter_by(id=userid).first()
+            if user is not None:
+                result = models.user_schema.dump(user)
+                return jsonify(wrap200code(user=result.data))
+            else:
+                raise InvalidUsage('Wrong user id.', status_code=400)
         else:
-            # Should return "wrong ID"
-            return {}
+            raise InvalidUsage("No access to query this user.", status_code=403)
     else:
-        users = models.User.query.all()
-        if users is not None:
-            result = models.users_schema.dump(users)
-            return jsonify(wrap200code(users=result.data))
+        if current_user.has_role('admin') or current_user.has_role('editor'):
+            users = models.User.query.all()
+            if users is not None:
+                result = models.users_schema.dump(users)
+                return jsonify(wrap200code(users=result.data))
+            else:
+                # This should never happen
+                raise jsonify(wrap200code(users=[]))
         else:
-            raise InvalidUsage('Wrong user id.', status_code=400)
+            raise InvalidUsage("No access to query all users.", status_code=403)
 
 
 @api.route('/api/v1/users/self')
 @auth_required('token', 'session')
 def user_self():
-    """
-    Check logged in user's data
-    :return:
+    """Getting the current use user's data
+
+    **Example request:**
+
+    .. sourcecode:: http
+
+        GET /api/v1/users/self HTTP/1.0
+        Authorization: TOKEN
+
+    **Example response:**
+
+    .. sourcecode:: http
+
+        HTTP/1.0 200 OK
+        Content-Type: application/json
+        Content-Length: 489
+        Server: Werkzeug/0.11.8 Python/3.5.1
+        Date: Tue, 19 Apr 2016 15:04:18 GMT
+
+        {
+          "meta": {
+            "code": 200
+          },
+          "response": {
+            "user": {
+              "_links": {
+                "collection": "/api/v1/users",
+                "records": "/api/v1/users/2/records",
+                "roles": "/api/v1/users/2/roles",
+                "self": "/api/v1/users/2",
+                "targets": "/api/v1/users/2/targets"
+              },
+              "date_created": "2016-04-19T05:39:11+00:00",
+              "date_modified": "2016-04-19T14:17:21+00:00",
+              "email": "xyz@a.com",
+              "id": 2,
+              "target_daily_calories": 0
+            }
+          }
+        }
+
+    :qparam auth_token: Optional token for authentication if no :http:header:`Authorization` nor session cookie is sent.
+
+    :reqheader Authorization: Optional token for authentication if no ``auth_token`` nor session cookie is sent.
+
+    :status 200: Successful query
+    :status 401: If not authenticated (not logged in)
     """
     return users(current_user.id)
 
@@ -96,13 +199,13 @@ def user_self():
 @api.route('/api/v1/users', methods=['POST'])
 def register_user():
     """
-    Register new user. Requres ``email`` and ``password fields`` in POST data.
+    Register new user. Requires ``email`` and ``password`` fields.
 
     **Example request**:
 
     .. sourcecode:: http
 
-        POST /api/v1/users HTTP/1.1
+        POST /api/v1/users HTTP/1.0
         Host: example.com
         Accept: application/json
 
@@ -111,9 +214,26 @@ def register_user():
             "password": "secret_password"
         }
 
+    .. sourcecode:: http
+
+        HTTP/1.0 200 OK
+        Content-Type: application/json
+        Content-Length: 76
+        Server: Werkzeug/0.11.8 Python/3.5.1
+        Date: Tue, 19 Apr 2016 15:42:48 GMT
+
+        {
+          "meta": {
+            "code": 200
+          },
+          "response": {
+            "success": true
+          }
+        }
+
     :status 200: When user successfully created
     :status 400: When input data is not validated
-    :status 409: When an unser with such email address already exists
+    :status 409: When an user with such email address already exists
     """
     registration_inputs = RegistrationInputs(request)
     if not registration_inputs.validate():
@@ -130,11 +250,10 @@ def register_user():
         return jsonify(wrap200code(success=True))
 
 
-@api.route('/api/v1/users/self/', defaults={'userid': None}, methods=['PUT'])
+@api.route('/api/v1/users/self', defaults={'userid': None}, methods=['PUT'])
 @api.route('/api/v1/users/<userid>', methods=['PUT'])
 def manage_user(userid):
-    """
-    Modify user information
+    """Modify user information
 
     :param userid: the ID of user to be modified
     :status 501: User modifications are not implemented yet
@@ -147,10 +266,63 @@ def manage_user(userid):
 @auth_required('token', 'session')
 def users_records(userid):
     """
-    Query user records
+    Query records of a specific user.
 
-    :param userid:
-    :return:
+    .. sourcecode:: http
+
+        GET /api/v1/users/2/records HTTP/1.0
+        Authorization: TOKEN
+        Accept: application/jsoHTTP/1.0
+
+    .. sourcecode:: http
+
+        HTTP/1.0 200 OK
+        Content-Type: application/json
+        Content-Length: 960
+        Server: Werkzeug/0.11.8 Python/3.5.1
+        Date: Tue, 19 Apr 2016 14:44:12 GMT
+
+        {
+          "meta": {
+            "code": 200
+          },
+          "response": {
+            "records": [
+              {
+                "calories": 150,
+                "date_created": "2016-04-19T05:43:02+00:00",
+                "date_modified": "2016-04-19T05:49:03+00:00",
+                "description": "Sandwich",
+                "id": 2,
+                "record_date": "2016-04-19",
+                "record_time": "19:15:00",
+                "user_id": 2
+              },
+              {
+                "calories": 120,
+                "date_created": "2016-04-19T05:41:17+00:00",
+                "date_modified": "2016-04-19T05:41:17+00:00",
+                "description": "Sandwich",
+                "id": 1,
+                "record_date": "2016-04-12",
+                "record_time": "12:30:00",
+                "user_id": 2
+              }
+            ]
+          }
+        }
+
+    :param userid: Which user's records to query. If not the current user's, then need to have ``editor`` role.
+    :qparam date_start: Date to query equal or after, in RFC 3339 format: 'YYYY-MM-DD', eg. ``2016-04-19``
+    :qparam date_end: Date to query equal or before, in RFC 3339 format: 'YYYY-MM-DD', eg. ``2016-04-19``
+    :qparam time_start: Time each day to query equal or after, in 'HH:MM' or 'HH:MM:SS' format (24H), eg. ``21:30`` or ``21:30:21``
+    :qparam time_end: Time each day to query equal or before, in 'HH:MM' or 'HH:MM:SS' format (24H), eg. ``21:30`` or ``21:30:21``
+    :qparam auth_token: Optional token for authentication if no :http:header:`Authorization` nor session cookie is sent.
+
+    :reqheader Authorization: Optional token for authentication if no ``auth_token`` nor session cookie is sent.
+    :status 200: If query successful.
+    :status 400: If no such user exists.
+    :status 403: If not authorized to query that particular user.
     """
     if userid != current_user.id and not current_user.has_role('editor'):
         raise InvalidUsage("No access to the records of this user.", status_code=403)
@@ -195,11 +367,78 @@ def users_records(userid):
 @api.route('/api/v1/users/<int:userid>/targets', methods=['GET', 'PUT'])
 @auth_required('token', 'session')
 def users_targets(userid):
-    """
-    Query user targets
+    """Query or update user targets, such as daily calories goals.
 
-    :param userid:
-    :return:
+    **Example query request:**
+
+    .. sourcecode:: http
+
+        GET /api/v1/users/2/targets HTTP/1.0
+        Authorization: TOKEN
+
+    **Example query response:**
+
+    .. sourcecode:: http
+
+        HTTP/1.0 200 OK
+        Content-Type: application/json
+        Content-Length: 127
+        Server: Werkzeug/0.11.8 Python/3.5.1
+        Date: Tue, 19 Apr 2016 15:09:46 GMT
+
+        {
+          "meta": {
+            "code": 200
+          },
+          "response": {
+            "targets": {
+              "id": 2,
+              "target_daily_calories": 1200
+            }
+          }
+        }
+
+    **Example update request:**
+
+    .. sourcecode:: http
+
+        PUT /api/v1/users/2/targets HTTP/1.0
+        Authorization: TOKEN
+
+        {
+            "target_daily_calories": 1100
+        }
+
+    **Example update response:**
+
+    .. sourcecode:: http
+
+        HTTP/1.0 200 OK
+        Content-Type: application/json
+        Content-Length: 116
+        Server: Werkzeug/0.11.8 Python/3.5.1
+        Date: Tue, 19 Apr 2016 15:16:42 GMT
+
+        {
+          "meta": {
+            "code": 200
+          },
+          "response": {
+            "settings": {
+              "target_daily_calories": 1100
+            }
+          }
+        }
+
+    :qparam auth_token: Optional token for authentication if no :http:header:`Authorization` nor session cookie is sent.
+
+    :reqheader Authorization: Optional token for authentication if no ``auth_token`` nor session cookie is sent.
+
+    :param userid: the id of user being queried or modified. For modifying a different user than the one logged in needs ``editor`` rote.
+    :status 200: Successful query
+    :status 400: If no user exists who correspond to the one queried
+    :status 401: If not authenticated (not logged in)
+    :status 403: If not authorized
     """
     if userid != current_user.id and not current_user.has_role('editor'):
         raise InvalidUsage("No access to the records of this user.", status_code=403)
@@ -226,11 +465,111 @@ def users_targets(userid):
 @api.route('/api/v1/users/<int:userid>/roles', methods=['GET', 'PUT', 'DELETE'])
 @auth_required('token', 'session')
 def users_roles(userid):
-    """
-    Query user targets
+    """Query and update user roles
 
-    :param userid:
-    :return:
+    Available roles: ``admin`` and ``editor``.
+
+    ``admin``: can change roles for other users, can query user list.
+    ``editor``: can query and change records for all user
+
+    **Example query request:**
+
+    .. sourcecode:: http
+
+        GET /api/v1/users/1/roles HTTP/1.0
+        Authorization: TOKEN
+
+    **Example query result:**
+
+    .. sourcecode:: http
+
+        HTTP/1.0 200 OK
+        Content-Type: application/json
+        Content-Length: 107
+        Server: Werkzeug/0.11.8 Python/3.5.1
+        Date: Tue, 19 Apr 2016 15:22:05 GMT
+
+        {
+          "meta": {
+            "code": 200
+          },
+          "response": {
+            "roles": [
+              "admin",
+              "editor"
+            ]
+          }
+        }
+
+    **Example request to add role:**
+
+    .. sourcecode:: http
+
+        PUT /api/v1/users/2/roles HTTP/1.0
+        Authorization: TOKEN
+
+        {
+            "role": "editor"
+        }
+
+    .. sourcecode:: http
+
+        HTTP/1.0 200 OK
+        Content-Type: application/json
+        Content-Length: 103
+        Server: Werkzeug/0.11.8 Python/3.5.1
+        Date: Tue, 19 Apr 2016 15:26:04 GMT
+
+        {
+          "meta": {
+            "code": 200
+          },
+          "response": {
+            "settings": {
+              "role": "editor"
+            }
+          }
+        }
+
+    **Example request to remove role:**
+
+    .. sourcecode:: http
+
+        DELETE /api/v1/users/2/roles HTTP/1.0
+        Authorization: TOKEN
+
+        {
+            "role": "editor"
+        }
+
+    .. sourcecode:: http
+
+        HTTP/1.0 200 OK
+        Content-Type: application/json
+        Content-Length: 103
+        Server: Werkzeug/0.11.8 Python/3.5.1
+        Date: Tue, 19 Apr 2016 15:27:30 GMT
+
+        {
+          "meta": {
+            "code": 200
+          },
+          "response": {
+            "settings": {
+              "role": "editor"
+            }
+          }
+        }
+
+    :qparam auth_token: Optional token for authentication if no :http:header:`Authorization` nor session cookie is sent.
+
+    :reqheader Authorization: Optional token for authentication if no ``auth_token`` nor session cookie is sent.
+
+    :param userid: the id of user being queried or modified. For modifying a different user than the one logged in needs ``editor`` rote.
+    :status 200: Successful query
+    :status 400: If no user exists who correspond to the one queried, or no applicable role found
+    :status 401: If not authenticated (not logged in)
+    :status 403: If not authorized
     """
     if not current_user.has_role('admin'):
         raise InvalidUsage("Only administrators have access to user roles.", status_code=403)
@@ -281,10 +620,63 @@ Records API
 @api.route('/api/v1/records', methods=['POST'])
 @auth_required('token', 'session')
 def add_record():
-    """
-    Create new record
+    """Create new record
 
-    :return:
+    **Example new record query:**
+
+    .. sourcecode:: http
+
+        POST /api/v1/records HTTP/1.0
+        Authorization: TOKEN
+
+        {
+            "record_date": "2016-04-12",
+            "record_time": "12:30",
+            "calories": 120,
+            "description": "Sandwich",
+            "userid": 2
+        }
+
+    **Example new record response:**
+
+    .. sourcecode:: http
+
+        HTTP/1.0 200 OK
+        Content-Type: application/json
+        Content-Length: 344
+        Server: Werkzeug/0.11.8 Python/3.5.1
+        Date: Tue, 19 Apr 2016 15:47:49 GMT
+
+        {
+          "meta": {
+            "code": 200
+          },
+          "response": {
+            "new_record": {
+              "calories": 120,
+              "date_created": "2016-04-19T15:47:49+00:00",
+              "date_modified": "2016-04-19T15:47:49+00:00",
+              "description": "Sandwich",
+              "id": 17,
+              "record_date": "2016-04-12",
+              "record_time": "12:30:00",
+              "user_id": 2
+            }
+          }
+        }
+
+    :qparam record_date: Date associated with the record, in "YYYY-MM-DD" format, e.g. ``2016-04-19``.
+    :qparam record_time: Time association with the record, in 24h format, either "%H:%M" or "%H:%M:%S", eg. ``12:30`` or ``12:30:15``.
+    :qparam calories: Calories (in integers).
+    :qparam description: An optional description of the record.
+    :qparam userid: An existing user ID.
+    :qparam auth_token: Optional token for authentication if no :http:header:`Authorization` nor session cookie is sent.
+
+    :reqheader Authorization: Optional token for authentication if no ``auth_token`` nor session cookie is sent.
+
+    :status 200: If record successfully added
+    :status 400: If invalid data is posted
+    :status 403: If does not have authorization to create data for the specific user
     """
     new_record_inputs = NewRecordInputs(request)
     if not new_record_inputs.validate():
@@ -321,17 +713,95 @@ def add_record():
         db.session.add(new_record)
         db.session.commit()
         results = models.record_schema.dump(new_record)
-        return jsonify(wrap200code(new_record=results))
+        return jsonify(wrap200code(new_record=results.data))
 
 
 @api.route('/api/v1/records/<int:recordid>', methods=['GET', 'PUT', 'DELETE'])
 @auth_required('token', 'session')
 def records(recordid):
-    """
-    Query records
+    """Query and modify records
 
-    :param recordid:
-    :return:
+    **Modification:**
+
+    Submit only the parameteres that need to be modified (``record_date``, ``record_time``, ``description``, ``calories``).
+    The ``user_id`` cannot be modified!
+
+    **Example request to modify record:**
+
+    .. sourcecode:: http
+
+        PUT /api/v1/records/17 HTTP/1.0
+        Authorization: TOKEN
+
+        {
+            "record_date": "2016-04-19",
+            "record_time": "19:15",
+            "calories": 150
+        }
+
+    **Example response to modify record:**
+
+    .. sourcecode:: http
+
+        HTTP/1.0 200 OK
+        Content-Type: application/json
+        Content-Length: 340
+        Server: Werkzeug/0.11.8 Python/3.5.1
+        Date: Tue, 19 Apr 2016 16:02:23 GMT
+
+        {
+          "meta": {
+            "code": 200
+          },
+          "response": {
+            "record": {
+              "calories": 150,
+              "date_created": "2016-04-19T15:47:49+00:00",
+              "date_modified": "2016-04-19T16:02:05+00:00",
+              "description": "Sandwich",
+              "id": 17,
+              "record_date": "2016-04-19",
+              "record_time": "19:15:00",
+              "user_id": 2
+            }
+          }
+        }
+
+
+    **Example request to remove a record:**
+
+    .. sourcecode:: http
+
+        DELETE /api/v1/records/5 HTTP/1.0
+        Authorization: TOKEN
+
+    **Example response to remove a record:**
+
+    .. sourcecode:: http
+
+        HTTP/1.0 200 OK
+        Content-Type: application/json
+        Content-Length: 76
+        Server: Werkzeug/0.11.8 Python/3.5.1
+        Date: Tue, 19 Apr 2016 15:59:35 GMT
+
+        {
+          "meta": {
+            "code": 200
+          },
+          "response": {
+            "deleted": true
+          }
+        }
+
+    :qparam auth_token: Optional token for authentication if no :http:header:`Authorization` nor session cookie is sent.
+
+    :reqheader Authorization: Optional token for authentication if no ``auth_token`` nor session cookie is sent.
+
+    :param recordid: Which record to modify.
+    :status 200: Successfully processed the query
+    :status 400: Incorrect query.
+    :status 403: No permission to alter a record associated with another user (e.g. not an ``editor``)
     """
     record = models.Record.query.filter_by(id=recordid).first()
     if record is None:
@@ -374,7 +844,7 @@ def records(recordid):
 
         db.session.commit()
         result = models.record_schema.dump(record)
-        return jsonify(wrap200code(record=result))
+        return jsonify(wrap200code(record=result.data))
     elif request.method == 'DELETE':
         db.session.delete(record)
         db.session.commit()
