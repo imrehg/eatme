@@ -201,6 +201,56 @@ def users_targets(userid):
         raise InvalidUsage("Method not allowed (only GET and PUT)", status_code=405)
 
 
+@api.route('/api/v1/users/<int:userid>/roles', methods=['GET', 'PUT', 'DELETE'])
+@auth_required('token', 'session')
+def users_roles(userid):
+    """
+    Query user targets
+
+    :param userid:
+    :return:
+    """
+    if not current_user.has_role('admin'):
+        raise InvalidUsage("Only administrators have access to user roles.", status_code=403)
+
+    user = models.User.query.filter_by(id=userid).first()
+    if user is None:
+        raise InvalidUsage("No such user.", status_code=400)
+
+    possible_roles = ['admin', 'editor']
+
+    if request.method == 'GET':
+        this_user_roles = []
+        for role in possible_roles:
+            if user.has_role(role):
+                this_user_roles += [role]
+        return jsonify(roles=this_user_roles)
+    elif request.method == 'PUT':
+        role_input = RoleInputs(request)
+        if not role_input.validate():
+            raise InvalidUsage(role_input.errors, status_code=400)
+        role_json = request.json
+        role = user_datastore.find_role(role_json['role'])
+        if role is None:
+            raise InvalidUsage("No applicable role found", status_code=400)
+        user_datastore.add_role_to_user(user, role)
+        db.session.commit()
+        return jsonify(success=True, settings=role_json)
+    elif request.method == 'DELETE':
+        role_input = RoleInputs(request)
+        if not role_input.validate():
+            raise InvalidUsage(role_input.errors, status_code=400)
+        role_json = request.json
+        role = user_datastore.find_role(role_json['role'])
+        if role is None:
+            raise InvalidUsage("No applicable role found", status_code=400)
+        user_datastore.remove_role_from_user(user, role)
+        db.session.commit()
+        return jsonify(success=True, settings=role_json)
+    else:
+        raise InvalidUsage("Method not allowed (only GET/PUT/DELETE)", status_code=405)
+
+
 """
 Records API
 """
@@ -406,3 +456,19 @@ target_schema = {
 
 class TargetInputs(Inputs):
     json = [JsonSchema(schema=target_schema)]
+
+
+roles_schema = {
+    "title": "A user roles object",
+    "type": "object",
+    "properties": {
+        "role": {
+            "enum": ["admin", "editor"]
+        },
+    },
+    "required": ["role"]
+}
+
+
+class RoleInputs(Inputs):
+    json = [JsonSchema(schema=roles_schema)]
