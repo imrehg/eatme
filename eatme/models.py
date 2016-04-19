@@ -66,7 +66,7 @@ Output Schemas
 class UserSchema(ma.Schema):
     class Meta:
         # Fields to expose
-        fields = ('id', 'email', 'date_created', 'date_modified', '_links')
+        fields = ('id', 'email', 'date_created', 'date_modified', 'target_daily_calories', '_links')
 
     # Smart hyperlinking
     _links = ma.Hyperlinks({

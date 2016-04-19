@@ -187,7 +187,7 @@ def users_records(userid):
     except ValueError:
         raise InvalidUsage("Invalid query parameters.", status_code=400)
 
-    current_records = query.all()
+    current_records = query.order_by(models.Record.record_date.desc(), models.Record.record_time.desc()).all()
     result = models.records_schema.dump(current_records)
     return jsonify(wrap200code(records=result.data))
 
