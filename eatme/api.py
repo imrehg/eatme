@@ -23,8 +23,24 @@ class InvalidUsage(Exception):
 
     def to_dict(self):
         rv = dict(self.payload or ())
-        rv['message'] = self.message
+        if 'meta' not in rv:
+            rv['meta'] = {}
+        rv['meta'] = {'code': self.status_code}
+        if 'response' not in rv:
+            rv['response'] = {}
+        if 'error' not in rv['response']:
+            rv['response']['error'] = {}
+        rv['response']['error']['message'] = self.message
         return rv
+
+
+def wrap200code(**kwargs):
+    response_object = {}
+    for key, value in kwargs.items():
+        response_object[key] = value
+    rv = {'meta': {'code': 200},
+          'response': response_object}
+    return rv
 
 
 api = Blueprint('api',
@@ -61,10 +77,9 @@ def users(userid):
         users = models.User.query.all()
         if users is not None:
             result = models.users_schema.dump(users)
-            return jsonify(users=result.data)
+            return jsonify(wrap200code(users=result.data))
         else:
-            # Should return "wrong ID"
-            return {}
+            raise InvalidUsage('Wrong user id.', status_code=400)
 
 
 @api.route('/api/v1/users', methods=['POST'])
@@ -92,7 +107,6 @@ def register_user():
     registration_inputs = RegistrationInputs(request)
     if not registration_inputs.validate():
         raise InvalidUsage(registration_inputs.errors, status_code=400)
-        # return jsonify(success=False,)
     else:
         input = request.json
         if user_datastore.get_user(input['email']):
@@ -101,9 +115,8 @@ def register_user():
             user = user_datastore.create_user(email=input['email'],
                                               password=encrypt_password(input['password']))
             if user:
-                print("GOT NEW USER")
                 db.session.commit()
-        return jsonify(success=True)
+        return jsonify(wrap200code(success=True))
 
 
 @api.route('/api/v1/users/self/', defaults={'userid': None}, methods=['PUT'])
@@ -167,7 +180,7 @@ def users_records(userid):
 
     current_records = query.all()
     result = models.records_schema.dump(current_records)
-    return jsonify(records=result.data)
+    return jsonify(wrap200code(records=result.data))
 
 
 @api.route('/api/v1/users/<int:userid>/targets', methods=['GET', 'PUT'])
@@ -188,7 +201,7 @@ def users_targets(userid):
 
     if request.method == 'GET':
         result = models.target_schema.dump(user)
-        return jsonify(targets=result.data)
+        return jsonify(wrap200code(targets=result.data))
     elif request.method == 'PUT':
         target_inputs = TargetInputs(request)
         if not target_inputs.validate():
@@ -196,7 +209,7 @@ def users_targets(userid):
         target_json = request.json
         user.target_daily_calories = int(target_json['target_daily_calories'])
         db.session.commit()
-        return jsonify(success=True, settings=target_json)
+        return jsonify(wrap200code(settings=target_json))
     else:
         raise InvalidUsage("Method not allowed (only GET and PUT)", status_code=405)
 
@@ -224,7 +237,7 @@ def users_roles(userid):
         for role in possible_roles:
             if user.has_role(role):
                 this_user_roles += [role]
-        return jsonify(roles=this_user_roles)
+        return jsonify(wrap200code(roles=this_user_roles))
     elif request.method == 'PUT':
         role_input = RoleInputs(request)
         if not role_input.validate():
@@ -235,7 +248,7 @@ def users_roles(userid):
             raise InvalidUsage("No applicable role found", status_code=400)
         user_datastore.add_role_to_user(user, role)
         db.session.commit()
-        return jsonify(success=True, settings=role_json)
+        return jsonify(wrap200code(settings=role_json))
     elif request.method == 'DELETE':
         role_input = RoleInputs(request)
         if not role_input.validate():
@@ -246,7 +259,7 @@ def users_roles(userid):
             raise InvalidUsage("No applicable role found", status_code=400)
         user_datastore.remove_role_from_user(user, role)
         db.session.commit()
-        return jsonify(success=True, settings=role_json)
+        return jsonify(wrap200code(settings=role_json))
     else:
         raise InvalidUsage("Method not allowed (only GET/PUT/DELETE)", status_code=405)
 
@@ -298,7 +311,8 @@ def add_record():
                                    description=input['description'])
         db.session.add(new_record)
         db.session.commit()
-        return models.record_schema.jsonify(new_record)
+        results = models.record_schema.dump(new_record)
+        return jsonify(wrap200code(new_record=results))
 
 
 @api.route('/api/v1/records/<int:recordid>', methods=['GET', 'PUT', 'DELETE'])
@@ -319,7 +333,7 @@ def records(recordid):
 
     if request.method == 'GET':
         result = models.record_schema.dump(record)
-        return jsonify(targets=result.data)
+        return jsonify(wrap200code(targets=result.data))
     elif request.method == 'PUT':
         updated_records_inputs = UpdatedRecordInputs(request)
         if not updated_records_inputs.validate():
@@ -350,11 +364,12 @@ def records(recordid):
             record.description = update_json['description']
 
         db.session.commit()
-        return models.record_schema.jsonify(record)
+        result = models.record_schema.dump(record)
+        return jsonify(wrap200code(record=result))
     elif request.method == 'DELETE':
         db.session.delete(record)
         db.session.commit()
-        return jsonify(success=True)
+        return jsonify(wrap200code(deleted=True))
     else:
         raise InvalidUsage("Method not allowed (only GET and PUT)", status_code=405)
 
