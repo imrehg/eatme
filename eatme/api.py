@@ -207,7 +207,8 @@ def add_record():
         return models.record_schema.jsonify(new_record)
 
 
-@api.route('/api/v1/records/<recordid>')
+@api.route('/api/v1/records/<int:recordid>', methods=['GET', 'PUT', 'DELETE'])
+@auth_required('token', 'session')
 def records(recordid):
     """
     Query records
@@ -215,8 +216,36 @@ def records(recordid):
     :param recordid:
     :return:
     """
-    # TODO records search
-    return
+    record = models.Record.query.filter_by(id=recordid).first()
+    if record is None:
+        raise InvalidUsage("No such record.", status_code=400)
+
+    if record.user_id != current_user.id and not current_user.has_role('editor'):
+        raise InvalidUsage("No access to the records of this user.", status_code=403)
+
+    if request.method == 'GET':
+        result = models.record_schema.dump(record)
+        return jsonify(targets=result.data)
+    elif request.method == 'PUT':
+        updated_records_inputs = UpdatedRecordInputs(request)
+        if not updated_records_inputs.validate():
+            raise InvalidUsage(updated_records_inputs.errors, status_code=400)
+        update_json = request.json
+        print(update_json)
+        if 'calories' in update_json:
+            record.calories = int(update_json['calories'])
+        if 'date_record' in update_json:
+            record.date_record = pyrfc3339.parse(update_json['date_record'])
+        if 'description' in update_json:
+            record.description = update_json['description']
+        db.session.commit()
+        return models.record_schema.jsonify(record)
+    elif request.method == 'DELETE':
+        db.session.delete(record)
+        db.session.commit()
+        return jsonify(success=True)
+    else:
+        raise InvalidUsage("Method not allowed (only GET and PUT)", status_code=405)
 
 
 """
@@ -270,6 +299,30 @@ new_record_schema = {
 
 class NewRecordInputs(Inputs):
     json = [JsonSchema(schema=new_record_schema)]
+
+
+updated_record_schema = {
+    "title": "An updated calories record",
+    "type": "object",
+    "properties": {
+        "date_record": {
+            "type": "string",
+            "format": "date-time"
+        },
+        "description": {
+            "type": "string",
+            "maxlength": 255
+        },
+        "calories": {
+            "type": "integer",
+            "minimum": 0
+        },
+    },
+}
+
+
+class UpdatedRecordInputs(Inputs):
+    json = [JsonSchema(schema=updated_record_schema)]
 
 
 target_schema = {
