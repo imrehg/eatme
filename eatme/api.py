@@ -125,13 +125,11 @@ def manage_user(userid):
     """
     Modify user information
 
-    :param userid:
-    :return:
+    :param userid: the ID of user to be modified
+    :status 501: User modifications are not implemented yet
     """
-    if request.method == 'PUT':
-        form = UserForm(request.form)
-        if form.validate():
-            return jsonify(form)
+    # Todo: impelemnt user functions
+    raise InvalidUsage('User modifications not implemented yet', status_code=501)
 
 
 @api.route('/api/v1/users/<int:userid>/records', methods=['GET'])
