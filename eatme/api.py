@@ -117,7 +117,8 @@ def manage_user(userid):
             return jsonify(form)
 
 
-@api.route('/api/v1/users/<userid>/records')
+@api.route('/api/v1/users/<int:userid>/records', methods=['GET'])
+@auth_required('token', 'session')
 def users_records(userid):
     """
     Query user records
@@ -125,8 +126,12 @@ def users_records(userid):
     :param userid:
     :return:
     """
-    # TODO user records search
-    return
+    if userid != current_user.id and not current_user.has_role('editor'):
+        raise InvalidUsage("No access to the records of this user.", status_code=403)
+
+    records = models.Record.query.filter_by(user_id=userid).all()
+    result = models.records_schema.dump(records)
+    return jsonify(records=result.data)
 
 
 """

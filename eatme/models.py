@@ -78,3 +78,4 @@ class RecordSchema(ma.Schema):
 
 
 record_schema = RecordSchema()
+records_schema = RecordSchema(many=True)
