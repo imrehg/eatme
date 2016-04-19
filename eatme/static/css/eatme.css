@@ -1,0 +1,35 @@
+.hero {
+    background-image: url('/static/images/eatme_hero.jpg');
+    background-size: cover;
+    background-position: center;
+    height: 200px;
+    margin-bottom: 10px;
+}
+
+.hero .container {
+    display: table-cell;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.hero-heading {
+    color: white;
+}
+
+/*------------------------------------*\
+    #Default looks
+\*------------------------------------*/
+
+div#loginContainer {
+    display: none;
+}
+
+div#signupContainer {
+    display: none;
+}
+
+login-button,
+signup-button,
+logout-button {
+    display: none;
+}

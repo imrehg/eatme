@@ -1,8 +1,14 @@
 <!doctype html>
-<title>Hello from Flask</title>
+<title>EatMe - Calorie Tracking</title>
 <head>
+    <!--<link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>-->
+    <link type="text/css" rel="stylesheet" href="/static/css/normalize.css">
+    <link type="text/css" rel="stylesheet" href="/static/css/skeleton.css">
+    <link type="text/css" rel="stylesheet" href="/static/css/eatme.css">
     <script src="/static/js/jquery-2.2.3.js"></script>
+    <script src="/static/js/jquery.validate.min.js"></script>
     <script src="/static/js/underscore-1.8.3.js"></script>
+    <script src="/static/js/eatme.js"></script>
 
     <script id="header-template" type="text/x-underscore-template">
         <h1>Some header text: <%= foo %></h1>
@@ -10,18 +16,68 @@
     </script>
 
     <script>
-        $(function () {
+        <!--$(function () {-->
 
-        var tpl = _.template($("#header-template").html());
-        // Add the compiled html to the page
-        $('.content-placeholder').html(tpl({foo: "hello there", name: "Greg"}) );
-        });
+        <!--var tpl = _.template($("#header-template").html());-->
+        <!--// Add the compiled html to the page-->
+        <!--$('.content-placeholder').html(tpl({foo: "hello there", name: "Greg"}) );-->
+        <!--});-->
+
     </script>
 
 </head>
 <body>
-Testing
+
+<div class="section hero">
+    <div class="container">
+        <div class="row">
+            <div class="u-max-full-width header">
+                <h4 class="hero-heading">EatMe</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main">
+    <div class="container">
+        <div class="row">
+            <div class="two columns">
+                <h3>Actions</h3>
+                <button id="login-button">Login</button>
+                <button id="signup-button">Signup</button>
+                <button id="logout-button">Logout</button>
+            </div>
+            <div class="ten columns">
+                <div id="messageField"></div>
+                <div id="loginContainer">
+                    <form id="loginForm">
+                        <h3>Login</h3>
+                        <input type="email" id="loginEmail" name="email" value="" placeholder="Username" required><br>
+                        <input type="password" id="loginPW" name="password" value="" placeholder="Password"
+                               required><br>
+                        <input type="submit" name="commit" id="loginSubmit" value="Login">
+                    </form>
+                </div>
+
+                <div id="signupContainer">
+                    <form id="signupForm">
+                        <h3>Sign up</h3>
+                        <input type="email" id="signupEmail" name="email" value="" placeholder="Email address" required><br>
+                        <input type="password" id="signupPW1" name="password" value="" placeholder="Password"
+                               required><br>
+                        <input type="password" id="signupPW2" name="password2" value="" placeholder="Password again"
+                               required><br>
+                        <input type="submit" name="commit" id="signupSubmit" value="Submit">
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
 <!--Your new content will be displayed in here-->
 <div class="content-placeholder"></div>
+
 </body>
 </html>
