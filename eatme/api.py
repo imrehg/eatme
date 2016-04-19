@@ -137,7 +137,35 @@ def users_records(userid):
     if user is None:
         raise InvalidUsage("No such user.", status_code=400)
 
-    current_records = models.Record.query.filter_by(user_id=userid).all()
+    # Apply filtering
+    kwargs = {'user_id': userid}
+    query = models.Record.query.filter_by(**kwargs)
+    """ Progressive filtering on time """
+    try:
+        date_start = request.args.get('date_start')
+        if date_start is not None:
+            query_date_start = datetime.strptime(date_start, '%Y-%m-%d').date()
+            query = query.filter(models.Record.record_date >= query_date_start)
+        date_end = request.args.get('date_end')
+        if date_end is not None:
+            query_date_end = datetime.strptime(date_end, '%Y-%m-%d').date()
+            query = query.filter(models.Record.record_date <= query_date_end)
+        time_start = request.args.get('time_start')
+        if time_start is not None:
+            if len(time_start) < 6:
+                time_start += ':00'
+            query_time_start = datetime.strptime(time_start, '%H:%M:%S').time()
+            query = query.filter(models.Record.record_time >= query_time_start)
+        time_end = request.args.get('time_end')
+        if time_end is not None:
+            if len(time_end) < 6:
+                time_end += ':00'
+            query_time_end = datetime.strptime(time_end, '%H:%M:%S').time()
+            query = query.filter(models.Record.record_time <= query_time_end)
+    except ValueError:
+        raise InvalidUsage("Invalid query parameters.", status_code=400)
+
+    current_records = query.all()
     result = models.records_schema.dump(current_records)
     return jsonify(records=result.data)
 
