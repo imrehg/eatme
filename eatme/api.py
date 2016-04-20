@@ -1,4 +1,3 @@
-import pyrfc3339
 from datetime import datetime
 from flask import Blueprint, g, jsonify, request
 from flask.ext.security import auth_required, current_user
